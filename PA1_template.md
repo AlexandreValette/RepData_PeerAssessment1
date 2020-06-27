@@ -54,8 +54,8 @@ print(paste("Median steps per day :",round(perday.median)))
 data.perinterval <- aggregate(data.process[,1], by=list(data.process$interval),FUN = mean)
 names(data.perinterval)<-c("interval","steps")
 
-g <- ggplot(data = data.perinterval) + aes(x = factor(interval), y = steps, group = 1) + geom_line() + labs(x ="5 minutes interval", y = "Average number of steps across all days") + theme(axis.text.x = element_text(size = 0)) 
-g 
+g <- ggplot(data = data.perinterval) + aes(x = factor(interval), y = steps, group = 1) + geom_line() + labs(x ="5 minutes interval", y = "Average number of steps across all days") + theme(axis.text.x = element_text(size = 10)) 
+g + scale_x_discrete(breaks=c(0,500,1000,1500,2000,2500))
 ```
 
 ![](PA1_template_files/figure-html/daily-1.png)<!-- -->
@@ -126,4 +126,35 @@ print(paste("Median steps per day :",round(perday.median)))
 ## [1] "Median steps per day : 10766"
 ```
 
+Impact to imputing missing data is low for mean and median. This is due to the imputing strategy selected.
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```r
+data.process$date <- as.Date(data.process$date)
+which_day <- weekdays(data.process$date)
+data.process$which_day <- ifelse(which_day == "Saturday" | which_day == "Sunday" , c("weekend"), c("weekday"))
+data.process$which_day <- factor(data.process$which_day)
+
+data.perday.weekday <- ddply(data.process[data.process$which_day == "weekday", ], .(interval), function(data) { mean(data$steps, na.rm = TRUE)})
+names(data.perday.weekday) <- c("interval","steps")
+data.perday.weekend <- ddply(data.process[data.process$which_day == "weekend", ], .(interval), function(data) { mean(data$steps, na.rm = TRUE)})
+names(data.perday.weekend) <- c("interval","steps")
+```
+Merge both dataframe
+
+
+```r
+data.perday.weekday$whichday <- "weekday"
+data.perday.weekend$whichday <- "weekend"
+data.perday <- rbind(data.perday.weekend, data.perday.weekday)
+```
+
+Plot both dataframe as time-series with ggplot2.
+
+```r
+g <- ggplot(data = data.perday) + aes(x = factor(interval), y = steps, group = 1) + geom_line() + labs(x ="5-minute interval", y = "Average number of steps across weekdays") + theme(axis.text.x = element_text(size = 10)) + facet_wrap(~whichday, nrow=2)
+g + scale_x_discrete(breaks=c(0,500,1000,1500,2000,2500))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
